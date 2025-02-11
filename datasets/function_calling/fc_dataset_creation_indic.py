@@ -1,5 +1,5 @@
 import json
-from datasets import load_dataset
+from datasets import load_dataset,load_from_disk,Dataset
 from typing import List, Dict
 import pandas as pd
 import random
@@ -96,8 +96,22 @@ def convert_to_openai_format(query: str, tools: List[Dict]) -> Dict:
 print("Loading dataset...")
 ds = load_dataset("Salesforce/xlam-function-calling-60k")
 all_tools = ds['train']['tools']
+indic_data = load_from_disk("/home/aashay_sarvam_ai/sarvam-open-instruct/datasets/function_calling/translations/translations")
+
+# Convert to pandas for joining
+ds_df = pd.DataFrame(ds['train'])
+indic_df = pd.DataFrame(indic_data)
+
+# Join on query field to get original_query
+ds_df = ds_df.merge(indic_df, 
+                    left_on='query', 
+                    right_on='original_query', 
+                    how='inner')
+
+# Convert back to HF dataset
+ds = Dataset.from_pandas(ds_df)
 # Convert to pandas for easier processing
-df = pd.DataFrame(ds['train'])
+df = pd.DataFrame(ds)
 
 # Process each row and create OpenAI format
 print("Processing dataset...")
@@ -115,13 +129,13 @@ for _, row in df.iterrows():
 single_tool_data = [item for item in processed_data if item['num_tools'] == 1]
 multi_tool_data = [item for item in processed_data if item['num_tools'] > 1]
 """
-
+print(df.columns)
 processed_data_multi_tool = []
 for _, row in df.iterrows():
     sampled_tools = list(random.sample(all_tools, random.randint(5, 12)))
     random_index = random.randint(0, len(sampled_tools))
     sampled_tools.insert(random_index, row['tools'])
-    processed_item = convert_to_openai_format(row['query'], '\n'.join(sampled_tools))
+    processed_item = convert_to_openai_format(row['translated_query'], '\n\n'.join(sampled_tools))
     #tokens =len(tokenizer.encode(processed_item['messages'][0]['content']))
     #print(tokens)
     #processed_item['num_tokens'] = tokens
@@ -129,6 +143,7 @@ for _, row in df.iterrows():
     processed_item['num_tools_answers'] = len(row['answers'])
     processed_item['num_tools'] = len(row['tools'])
     processed_item['tools'] = len(row['tools'])
+    processed_item['language'] = row['language']
     processed_data_multi_tool.append(processed_item)
 
 from datasets import Dataset
@@ -137,6 +152,6 @@ ds_added_tool = ds_added_tool.rename_column("messages","original_messages")
 ds_added_tool = ds_added_tool.rename_column("answer","ground_truth")
 ds_added_tool = ds_added_tool.add_column("dataset",["function_calling"]*len(ds_added_tool))
 ds_added_tool = ds_added_tool.train_test_split(test_size=0.1)
-ds_added_tool.push_to_hub("sarvam/RLVR_function_calling",private=True)
+ds_added_tool.push_to_hub("sarvam/RLVR_function_calling_indic",private=True)
 
 
