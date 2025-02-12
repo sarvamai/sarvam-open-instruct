@@ -43,6 +43,7 @@ from open_instruct.ground_truth_utils import (
     verify_gsm8k_sample,
     verify_ifeval_sample,
     verify_math_sample,
+    verify_function_calling_sample,    
 )
 from open_instruct.utils import retry_on_exception
 
@@ -251,6 +252,8 @@ def apply_verifiable_reward(
             verified = verify_math_sample(prediction, ground_truth)
         elif dataset.lower() == "ifeval":
             verified = verify_ifeval_sample(prediction, ground_truth)
+        elif dataset.lower() == "function_calling":
+            verified = verify_function_calling_sample(prediction, ground_truth)
         # if verified, give reward
         if verified:
             logger.info("Applying ground truth reward 🤗")
