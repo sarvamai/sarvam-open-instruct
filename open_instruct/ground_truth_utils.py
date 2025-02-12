@@ -16,7 +16,7 @@ from open_instruct.math_utils import (
     normalize_final_answer,
     remove_boxed,
 )
-from typing import List, Dict, Any, Optional
+from open_instruct.function_calling_utils import is_function_calls_equivalent
 
 
 def verify_gsm8k_sample(model_output, ground_truth_answer):
@@ -224,52 +224,9 @@ def verify_function_sample(model_output: str, ground_truth:str) -> bool:
             
     return False
 
-def is_function_calls_equivalent(
-    actual_calls: List[Dict[str, Any]],
-    expected_calls: List[Dict[str, Any]]
-) -> bool:
-    """
-    Check if two lists of function calls are equivalent.
-    
-    Args:
-        actual_calls: List of actual function calls
-        expected_calls: List of expected function calls
-    
-    Returns:
-        bool: True if calls are equivalent
-    """
-    if len(actual_calls) != len(expected_calls):
-        return False
-        
-    for actual, expected in zip(actual_calls, expected_calls):
-        # Check basic structure
-        if not isinstance(actual, dict) or not isinstance(expected, dict):
-            return False
-            
-        # Check required fields
-        if "name" not in actual or "arguments" not in actual:
-            return False
-            
-        # Compare function names
-        if actual["name"] != expected["name"]:
-            return False
-            
-        # Compare arguments
-        actual_args = actual["arguments"]
-        expected_args = expected["arguments"]
-        
-        if not isinstance(actual_args, dict) or not isinstance(expected_args, dict):
-            return False
-            
-        # Check if all expected arguments are present with correct values
-        for key, value in expected_args.items():
-            if key not in actual_args or actual_args[key] != value:
-                return False
-                
-    return True
 
 # Example usage
-def test_verifier():
+def test_function_calling_verifier():
     ground_truth = """[
         {"name": "live_giveaways_by_type", "arguments": {"type": "beta"}},
         {"name": "live_giveaways_by_type", "arguments": {"type": "game"}}
@@ -312,17 +269,15 @@ def test_verifier():
         print(f"Input: {test_case[:100]}...")
 
 
-
-
 # debug code
 if __name__ == "__main__":
-    from datasets import load_dataset
-    print(test_verifier())
-    ds = load_dataset("ai2-adapt-dev/prompts_with_constraints_for_ground_truth")
-    test_model_output = "<|assistant|>\nThe answer is $\\boxed{3.14}$"
-    for sample in ds["train"]:
-        print(sample)
-        verify_ifeval_sample(test_model_output, sample["ground_truth"])
+    # from datasets import load_dataset
+    print(test_test_function_calling_verifierverifier())
+    # ds = load_dataset("ai2-adapt-dev/prompts_with_constraints_for_ground_truth")
+    # test_model_output = "<|assistant|>\nThe answer is $\\boxed{3.14}$"
+    # for sample in ds["train"]:
+    #     print(sample)
+    #     verify_ifeval_sample(test_model_output, sample["ground_truth"])
         
 
 
