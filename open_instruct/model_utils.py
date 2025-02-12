@@ -295,6 +295,7 @@ def apply_verifiable_reward(
     decoded_query_responses = tokenizer.batch_decode(query_responses, skip_special_tokens=True)  # noqa: F841
     # compare with ground truth.
     rewards = []
+    max_length = 6000
     for prediction, ground_truth, dataset in zip(decoded_responses, ground_truths, datasets):
         verified = False
         if ground_truth is None:
@@ -303,18 +304,23 @@ def apply_verifiable_reward(
             continue
         if dataset.lower() == "gsm8k":
             verified = verify_gsm8k_sample(prediction, ground_truth)
+            max_length = 2000
         elif dataset.lower() == "math":
             verified = verify_math_sample(prediction, ground_truth)
+            max_length = 2000
         elif dataset.lower() == "ifeval":
             verified = verify_ifeval_sample(prediction, ground_truth)
+            max_length = 1000
         elif dataset.lower() == "function_calling":
             verified = verify_function_sample(prediction, ground_truth)
+            max_length = 2000
         elif dataset.lower() == "opencode":
             verified = verify_opencode_sample(prediction, ground_truth)
+            max_length = 6000
         # if verified, give reward
         if verified:
             logger.info("Applying ground truth reward 🤗")
-            total_reward = verify_reward + get_repetition_penalty(prediction, 4, 1) + cosine_length_scaled_reward(len(prediction.split(" ")))
+            total_reward = verify_reward + get_repetition_penalty(prediction, 4, 1) + cosine_length_scaled_reward(len(prediction.split(" ")),max_length=max_length)
             rewards.append(total_reward)
         else:
             rewards.append(0)
