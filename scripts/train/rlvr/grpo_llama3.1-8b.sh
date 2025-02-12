@@ -10,8 +10,8 @@ python open_instruct/grpo_vllm_thread_ray_gtrl.py \
     --run_name rlvr_llama3_8b_indic_gsm_math_grpo \
     --dataset_mixer_list sarvam/RLVR-Indic-MATH-GSM 1.0 \
     --dataset_mixer_list_splits train \
-    --dataset_eval_mixer_list sarvam/RLVR-Indic-MATH-GSM 1.0 \
-    --dataset_eval_splits test \
+    --dataset_mixer_eval_list sarvam/RLVR-Indic-MATH-GSM 1.0 \
+    --dataset_mixer_eval_list_splits test \
     --max_token_length 2048 \
     --max_prompt_token_length 2048 \
     --response_length 2048 \
