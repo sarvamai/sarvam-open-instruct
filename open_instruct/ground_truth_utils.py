@@ -6,7 +6,8 @@ Used to give feedback to the model based on the ground truth answer.
 import json
 import re
 import string
-
+from open_instruct.math_utils import last_boxed_only_string, remove_boxed, get_unnormalized_answer, normalize_final_answer, is_equiv, hendrycks_is_equiv
+from open_instruct.code_utils import run_test_cases, format_function_code
 from open_instruct.if_functions import IF_FUNCTIONS_MAP
 from open_instruct.math_utils import (
     get_unnormalized_answer,
@@ -147,11 +148,10 @@ def verify_flan_sample(model_output, ground_truth_answer):
     return normalize_answer(answer_string) == normalize_answer(ground_truth_answer)
 
 
-def soft_format_reward_func(responses: list[str], reward_scale: float = 1.0) -> list[float]:
-    """Reward function that checks if the completion has a specific format."""
-    pattern = r".*?</think>\s*<answer>.*?</answer>"
-    matches = [re.match(pattern, r, re.DOTALL) for r in responses]
-    return [reward_scale if match else 0.0 for match in matches]
+def verify_opencode_sample(function_str, test_cases):
+    
+    function_str = format_function_code(function_str)
+    return run_test_cases(function_str, test_cases)
 
 
 # debug code
