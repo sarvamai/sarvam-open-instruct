@@ -11,7 +11,6 @@ def format_function_code(function_code):
     return function_code
 
 
-
 def run_test_cases(function_code, test_cases):
     """
     Generic test runner that executes a Python function against given test cases.
@@ -30,7 +29,6 @@ def run_test_cases(function_code, test_cases):
         if name in function_code:
             return False
 
-    
     try:
         # Execute the function code in the namespace
         # byte_code = compile_restricted(

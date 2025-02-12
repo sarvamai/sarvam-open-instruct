@@ -272,7 +272,7 @@ def test_function_calling_verifier():
 # debug code
 if __name__ == "__main__":
     # from datasets import load_dataset
-    print(test_test_function_calling_verifierverifier())
+    print(test_function_calling_verifier())
     # ds = load_dataset("ai2-adapt-dev/prompts_with_constraints_for_ground_truth")
     # test_model_output = "<|assistant|>\nThe answer is $\\boxed{3.14}$"
     # for sample in ds["train"]:
