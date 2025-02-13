@@ -1601,6 +1601,9 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
         dataset_config.max_prompt_token_length,
         dataset_config.max_token_length,
         args.hf_entity,
+        dataset_config.sft_messages_key,
+        dataset_config.ground_truths_key,
+        dataset_config.dataset_source_key,
     )
     train_dataset = train_dataset.shuffle(seed=args.seed)
     eval_dataset = None
@@ -1612,6 +1615,9 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
             dataset_config.max_prompt_token_length,
             dataset_config.max_token_length,
             args.hf_entity,
+            dataset_config.sft_messages_key,
+            dataset_config.ground_truths_key,
+            dataset_config.dataset_source_key,
         )
         eval_dataset = eval_dataset.shuffle(seed=args.seed)
     if args.cache_dataset_only:
