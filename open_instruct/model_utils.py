@@ -14,12 +14,14 @@
 # limitations under the License.
 
 
+
 import itertools
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import List, Literal, Optional, Tuple, Union
 import logging
+import math
 
 try:
     import deepspeed
@@ -226,6 +228,58 @@ def get_reward(
         sequence_lengths,
     )
 
+def get_repetition_penalty(generation, ngram_size, max_penalty):
+    """
+    Calculates repetition penalty by detecting consecutive repeated n-grams.
+    """
+    if not generation:
+        return 0.0
+
+    # Remove punctuation
+    text_without_punctuation = generation.translate(str.maketrans('', '', string.punctuation))
+    tokens = text_without_punctuation.split()
+
+    if len(tokens) < ngram_size:  # Not enough tokens to form n-grams
+        return 0.0
+
+    ngrams = []
+    for i in range(len(tokens) - ngram_size + 1):
+        ngrams.append(tuple(tokens[i:i + ngram_size]))
+
+    repetition_score = 0
+    previous_ngram = None
+    for ngram in ngrams:
+        if ngram == previous_ngram:  # Check for consecutive repetition
+            repetition_score += 1  # Increment penalty for each consecutive repeat
+        previous_ngram = ngram  # Update previous ngram for next iteration
+    
+    # Apply scaling and capping with clear bounds
+    penalty = min(repetition_score * 0.1, max_penalty)  # Scaling and cap penalty
+    return -penalty
+
+
+def cosine_length_scaled_reward(generation_length, max_length=6000, min_reward=-1, max_reward=1):
+    """
+    Calculates cosine length-scaled reward.
+    This function returns a reward between `min_reward` (-1) and `max_reward` (1)
+    based on how the generation length relates to the max length.
+
+    The cosine factor ranges from -1 to 1 as generation length progresses
+    from 0 to `max_length`.
+    """
+    if max_length <= 0:  # Max length should always be positive
+        return max_reward
+
+    # Normalize the progress to [0, 1]
+    progress = generation_length / max_length
+
+    # Apply cosine scaling with a pi factor to get a value between -1 and 1
+    cosine_factor = math.cos(progress * math.pi)  # This will give a value between -1 and 1
+
+    # Scale the cosine factor to range between min_reward and max_reward
+    scaled_reward = min_reward + 0.5 * (max_reward - min_reward) * (1.0 + cosine_factor)
+
+    return scaled_reward
 
 def apply_verifiable_reward(
     responses: torch.Tensor,
@@ -241,6 +295,7 @@ def apply_verifiable_reward(
     decoded_query_responses = tokenizer.batch_decode(query_responses, skip_special_tokens=True)  # noqa: F841
     # compare with ground truth.
     rewards = []
+    max_length = 6000
     for prediction, ground_truth, dataset in zip(decoded_responses, ground_truths, datasets):
         verified = False
         if ground_truth is None:
@@ -249,18 +304,24 @@ def apply_verifiable_reward(
             continue
         if dataset.lower() == "gsm8k":
             verified = verify_gsm8k_sample(prediction, ground_truth)
+            max_length = 2000
         elif dataset.lower() == "math":
             verified = verify_math_sample(prediction, ground_truth)
+            max_length = 2000
         elif dataset.lower() == "ifeval":
             verified = verify_ifeval_sample(prediction, ground_truth)
+            max_length = 1000
         elif dataset.lower() == "function_calling":
             verified = verify_function_sample(prediction, ground_truth)
+            max_length = 2000
         elif dataset.lower() == "opencode":
             verified = verify_opencode_sample(prediction, ground_truth)
+            max_length = 6000
         # if verified, give reward
         if verified:
             logger.info("Applying ground truth reward 🤗")
-            rewards.append(verify_reward)
+            total_reward = verify_reward + get_repetition_penalty(prediction, 4, 1) + cosine_length_scaled_reward(len(prediction.split(" ")),max_length=max_length)
+            rewards.append(total_reward)
         else:
             rewards.append(0)
     rewards_tensors = torch.tensor(rewards, device=query_responses.device)
