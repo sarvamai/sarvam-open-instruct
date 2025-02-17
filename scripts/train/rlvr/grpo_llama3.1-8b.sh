@@ -11,12 +11,12 @@ python open_instruct/grpo_vllm_thread_ray_gtrl.py \
     --dataset_mixer_list sarvam/RLVR-Indic-MATH-GSM 1.0 \
     --dataset_mixer_list_splits train \
     --dataset_mixer_eval_list sarvam/RLVR-Indic-MATH-GSM 1.0 \
-    --dataset_mixer_eval_list_splits test \
+    --dataset_mixer_eval_list_splits train \
     --max_token_length 2048 \
     --max_prompt_token_length 2048 \
     --response_length 2048 \
     --number_samples_per_prompt 4 \
-    --model_name_or_path /data/Llama-3.1-8B-Instruct \
+    --model_name_or_path /data/Meta-Llama-3.1-8B-Instruct \
     --stop_strings '"</answer>"' \
     --non_stop_penalty False \
     --chat_template_name llama3.1-8b \
@@ -28,8 +28,8 @@ python open_instruct/grpo_vllm_thread_ray_gtrl.py \
     --learning_rate 3e-7 \
     --total_episodes 100000 \
     --deepspeed_stage 3 \
-    --per_device_train_batch_size 6 \
-    --local_rollout_forward_batch_size 6 \
+    --per_device_train_batch_size 8 \
+    --local_rollout_forward_batch_size 8 \
     --local_mini_batch_size 24 \
     --local_rollout_batch_size 24 \
     --num_epochs 1 \

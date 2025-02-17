@@ -150,3 +150,7 @@ dmypy.json
 
 *.csv
 eval/eval_samples/*
+dump/
+datasets/misc/
+datasets/local_data/
+eval/local_eval_qualitative.py
