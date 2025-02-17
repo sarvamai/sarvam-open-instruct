@@ -1,16 +1,14 @@
 import argparse
-from pathlib import Path
 import pandas as pd
-import torch
 from vllm import LLM, SamplingParams
 from datasets import load_dataset
 from transformers import AutoTokenizer
-from tqdm import tqdm
 from open_instruct.ground_truth_utils import verify_gsm8k_sample, verify_math_sample
 import uuid
 import os
 
 filepath = uuid.uuid4()
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Batch benchmark for math and GSM tasks')
@@ -25,6 +23,7 @@ def parse_args():
     parser.add_argument('--iter', type=int, default=1,
                       help='Iteration number')
     return parser.parse_args()
+
 
 def check_answer(text: str, expected_answer: int, dataset_name: str) -> bool:
     if dataset_name.lower() == "gsm8k":
@@ -83,7 +82,7 @@ def main():
         max_tokens=args.max_tokens
     )
     print(f"Generating {len(all_prompts)} responses...")
-    generations = llm.generate(all_prompts, sampling_params=sampling_params)
+    generations = llm.generate(all_prompts, sampling_params=sampling_params, use_tqdm=True)
 
     # Process results
     results_df = pd.DataFrame(all_clean)
