@@ -25,8 +25,8 @@ CUDA_LAUNCH_BLOCKING=1 python open_instruct/ppo_vllm_thread_ray_gtrl.py \
     --total_episodes 200000 \
     --penalty_reward_value -10.0 \
     --deepspeed_stage 3 \
-    --per_device_train_batch_size 4 \
-    --local_rollout_forward_batch_size 4 \
+    --per_device_train_batch_size 2 \
+    --local_rollout_forward_batch_size 2 \
     --local_mini_batch_size 16 \
     --local_rollout_batch_size 16 \
     --actor_num_gpus_per_node 8 8 8 6 \
