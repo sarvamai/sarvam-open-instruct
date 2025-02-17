@@ -601,9 +601,7 @@ class PolicyTrainerRayProcess(RayProcess):
             dschf = None
         print(f"{dschf=}")
 
-        self.original_tokenizer = AutoTokenizer.from_pretrained(
-            model_config.model_name_or_path, revision=model_config.model_revision
-        )
+        self.original_tokenizer = AutoTokenizer.from_pretrained(model_config.model_name_or_path, revision=model_config.model_revision, use_fast=True)
         self.policy: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
             model_config.model_name_or_path,
             revision=model_config.model_revision,
@@ -853,7 +851,7 @@ class PolicyTrainerRayProcess(RayProcess):
             if args.stop_token == "eos":
                 args.stop_token_id = tokenizer.eos_token_id
             if args.stop_token == "period":
-                args.stop_token_id = tokenizer.encode(".")[0]
+                args.stop_token_id = tokenizer.encode(".")[-1]
         # data_collator = SimpleGenerateCollator(pad_token_id=tokenizer.pad_token_id)
         train_dataset_idxs = np.arange(len(train_dataset))
         shuffling_iter = ShufflingIterator(train_dataset_idxs, args.rollout_batch_size, seed=args.seed)
@@ -1093,7 +1091,6 @@ class PolicyTrainerRayProcess(RayProcess):
                         query_response, response, tokenizer.pad_token_id, context_length, args.temperature
                     )
                     torch.cuda.empty_cache()
-
                     ref_output = forward(self.ref_policy, query_response, tokenizer.pad_token_id)
                     ref_logits = ref_output.logits[:, context_length - 1 : -1]
                     ref_logits /= args.temperature + 1e-7
@@ -1101,7 +1098,6 @@ class PolicyTrainerRayProcess(RayProcess):
                     ref_logprob = torch.gather(ref_all_logprob, 2, response.unsqueeze(-1)).squeeze(-1)
                     del ref_output, ref_logits, ref_all_logprob
                     torch.cuda.empty_cache()
-
                     # Response Processing 1. truncate response after the first occurrence of `stop_token_id`
                     postprocessed_response = response
                     if args.stop_token_id is not None:  # handle the edge case when stop_token_id exists but is 0
@@ -1636,7 +1632,9 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
     if config.architectures == "LlamaForCausalLM" and config.bos_token_id == 128000:
         tokenizer.pad_token_id = 128002  # <|reserved_special_token_0|>
     else:
-        tokenizer.add_special_tokens({"pad_token": "[PAD]"})  # NOTE: we do not resize the embedding
+        tokenizer.pad_token_id = 128001 # <｜place▁holder▁no▁1｜>
+        tokenizer.pad_token = "<｜place▁holder▁no▁1｜>"
+        # tokenizer.add_special_tokens({"pad_token": "[PAD]"})  # NOTE: we do not resize the embedding
     if dataset_config.chat_template is not None:
         tokenizer.chat_template = CHAT_TEMPLATES[dataset_config.chat_template]
 

@@ -211,6 +211,7 @@ class DatasetConfig:
 
     # other config
     train_only_on_prompt: bool = False
+    think_mode: bool = False
 
     # visualization configs
     ncols: int = 2
@@ -456,6 +457,8 @@ class SFTGroundTruthDatasetProcessor(DatasetProcessor):
                 prompt = row[self.config.sft_messages_key]
             else:
                 prompt = row[self.config.sft_messages_key][:-1]
+            if self.config.think_mode:
+                prompt = [{"role": "system", "content": "You are a helpful assistant. Think deeply before answering the user's question."}] + prompt
             row[INPUT_IDS_PROMPT_KEY] = self.tokenizer.apply_chat_template(
                 prompt,
                 add_generation_prompt=True,
