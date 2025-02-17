@@ -241,6 +241,9 @@ def apply_verifiable_reward(
     decoded_query_responses = tokenizer.batch_decode(query_responses, skip_special_tokens=True)  # noqa: F841
     # compare with ground truth.
     rewards = []
+
+    decoded_responses = [x.split("</think>")[1] if "</think>" in x else x for x in decoded_responses]
+
     for prediction, ground_truth, dataset in zip(decoded_responses, ground_truths, datasets):
         verified = False
         if ground_truth is None:
