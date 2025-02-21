@@ -1632,9 +1632,9 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
     if config.architectures == "LlamaForCausalLM" and config.bos_token_id == 128000:
         tokenizer.pad_token_id = 128002  # <|reserved_special_token_0|>
     else:
-        tokenizer.pad_token_id = 128001 # <｜place▁holder▁no▁1｜>
-        tokenizer.pad_token = "<｜place▁holder▁no▁1｜>"
-        # tokenizer.add_special_tokens({"pad_token": "[PAD]"})  # NOTE: we do not resize the embedding
+        # tokenizer.pad_token_id = 128001 # <｜place▁holder▁no▁1｜>
+        # tokenizer.pad_token = "<｜place▁holder▁no▁1｜>"
+        tokenizer.add_special_tokens({"pad_token": "[PAD]"})  # NOTE: we do not resize the embedding
     if dataset_config.chat_template is not None:
         tokenizer.chat_template = CHAT_TEMPLATES[dataset_config.chat_template]
 
