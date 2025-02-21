@@ -3,13 +3,12 @@ import pandas as pd
 from vllm import LLM, SamplingParams
 from datasets import load_dataset
 from transformers import AutoTokenizer
-from open_instruct.ground_truth_utils import verify_gsm8k_sample, verify_math_sample
+from open_instruct.ground_truth_utils import verify_function_sample
 import uuid
 import os
 
-
 def parse_args():
-    parser = argparse.ArgumentParser(description='Batch benchmark for math and GSM tasks')
+    parser = argparse.ArgumentParser(description='Batch benchmark for function calling tasks')
     parser.add_argument('--model_path', type=str, required=True,
                       help='Path to the model checkpoint')
     parser.add_argument('--num_preds', type=int, default=1,
@@ -20,22 +19,20 @@ def parse_args():
                       help='Maximum number of tokens to generate')
     parser.add_argument('--iter', type=int, default=1,
                       help='Iteration number')
-    parser.add_argument('--think_mode', type=bool, default=True,
+    parser.add_argument('--think_mode', type=bool, default=False,
                       help='Think mode')
     return parser.parse_args()
 
 def check_answer(text: str, expected_answer: int, dataset_name: str) -> bool:
-    if dataset_name.lower() == "gsm8k":
-        return verify_gsm8k_sample(text, expected_answer)
-    elif dataset_name.lower() == "math":
-        return verify_math_sample(text, expected_answer)
+    if dataset_name.lower() == "function_calling":
+        return verify_function_sample(text, expected_answer)
     else:
         raise ValueError(f"Unsupported dataset: {dataset_name}")
 
 def main():
     args = parse_args()
 
-    dataset_name = "sarvam/RLVR-Indic-MATH-GSM-w-Prompt" #
+    dataset_name = "sarvam/RLVR-Indic-FC" #
     
     # Load dataset
     ds = load_dataset(dataset_name).shuffle(seed=42)["test"]
@@ -102,25 +99,15 @@ def main():
 
     # Calculate accuracy
     results_df['correct'] = results_df['check'].apply(lambda x: 1 if x else 0)
-    math_results_df = results_df[results_df['dataset'] == 'MATH']
-    gsm_results_df = results_df[results_df['dataset'] == 'gsm8k']
     mean_accuracy = results_df.groupby('prompt')['correct'].mean().mean()
-    math_mean_accuracy = math_results_df.groupby('prompt')['correct'].mean().mean()
-    gsm_mean_accuracy = gsm_results_df.groupby('prompt')['correct'].mean().mean()
     results_df.to_csv(f'results_{args.model_path.split("/")[-1]}_{args.num_preds}_{args.iter}.csv', index=False)
     print("Model: ", args.model_path.split("/")[-1])
     print("Think mode: ", args.think_mode)
-    print(f"Mean accuracy: {mean_accuracy:.4f}")
-    print(f"Number of gsm8k samples: {len(gsm_results_df)}")
-    print(f"GSM mean accuracy: {gsm_mean_accuracy:.4f}")
-    print(f"Number of MATH samples: {len(math_results_df)}")
-    print(f"Math mean accuracy: {math_mean_accuracy:.4f}")
+    print(f"Number of FC samples: {len(results_df)}")
+    print(f"FC mean accuracy: {mean_accuracy:.4f}")
     results_df.to_csv(f'benchmark_results/results_dataset_{dataset_name.split("/")[-1]}_model_{args.model_path.split("/")[-1]}_num_preds_{args.num_preds}_think_{str(args.think_mode).lower()}.csv', index=False)
 
 if __name__ == "__main__":
     main()
 
-
-
-    
 

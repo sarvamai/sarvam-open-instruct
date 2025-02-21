@@ -52,6 +52,7 @@ from transformers import (
 from open_instruct.dataset_transformation import (
     CHAT_TEMPLATES,
     TokenizerConfig,
+    get_cached_dataset_agentic_preference,
     get_cached_dataset_tulu_preference,
 )
 from open_instruct.dpo_utils import (
@@ -368,6 +369,10 @@ class FlatArguments:
         default=0.001,
         metadata={"help": "Weight for load balancing loss if applicable."},
     )
+    dataset_type: str = field(
+        default="agentic_preference",
+        metadata={"help": "The type of dataset to use. Options are 'tulu_preference' or 'agentic_preference'."},
+    )
     cache_dataset_only: bool = False
     """Immediately exit after caching the dataset"""
     concatenated_forward: bool = True
@@ -536,12 +541,20 @@ def main(args: FlatArguments):
     if args.dataset_mixer is not None:
         args.dataset_mixer_list = [item for pair in args.dataset_mixer.items() for item in pair]
     with accelerator.main_process_first():
-        train_dataset = get_cached_dataset_tulu_preference(
-            args.dataset_mixer_list,
-            tc,
-            args.max_seq_length,
-            args.hf_entity,
-        )
+        if args.dataset_type == "tulu_preference":
+            train_dataset = get_cached_dataset_tulu_preference(
+                args.dataset_mixer_list,
+                tc,
+                args.max_seq_length,
+                args.hf_entity,
+            )
+        elif args.dataset_type == "agentic_preference":
+            train_dataset = get_cached_dataset_agentic_preference(
+                args.dataset_mixer_list,
+                tc,
+                args.max_seq_length,
+                args.hf_entity,
+            )
         train_dataset = train_dataset.shuffle(seed=args.seed)
         train_dataset.set_format(type="pt")
     if args.cache_dataset_only:
